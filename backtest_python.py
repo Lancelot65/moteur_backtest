@@ -101,14 +101,14 @@ class Backtest:
 	def take_profit(self, close, position):
 		if self.positions_long:
 			
-			if ((close / self.positions_long[0]) - 1) * 100 > 0.1:
+			if ((close / self.positions_long[0]) - 1) * 100 > 2:
 				print("take_profit_long")
 				print(((close / self.positions_long[0]) - 1) * 100)
 				self.close_long(close, position, 1)
 				
 	
 		if self.positions_short:
-			if ((close / self.positions_short[0]) - 1) * 100 < -0.1:
+			if ((close / self.positions_short[0]) - 1) * 100 < -2:
 				print("take_profit_short")
 				print(((close / self.positions_short[0]) - 1) * 100)
 				self.close_short(close, position, 1)
@@ -116,19 +116,16 @@ class Backtest:
 	def stop_loss(self, close, position):
 		
 		if self.positions_long:
-			if ((close / self.positions_long[0]) - 1) * 100 < -0.5:
+			if ((close / self.positions_long[0]) - 1) * 100 < -1:
 				print("stop_loss_long")
 				print(((close / self.positions_long[0]) - 1) * 100)
 				self.close_long(close, position, 2)
 
 		if self.positions_short:
-			if ((close / self.positions_short[0]) - 1) * 100 > 0.5:
+			if ((close / self.positions_short[0]) - 1) * 100 > 1:
 				print("stop_loss_short")
 				print(((close / self.positions_short[0]) - 1) * 100)
 				self.close_short(close, position, 2)
-
-
-
 
 	def look_money(self):
 		print(f"Votre porte feuille contient {self.capital}$")
@@ -185,3 +182,15 @@ class Backtest:
 			y = self.data.close[pos]
 			plt.plot(x, y-move,'o', marker='^', markersize=7, label='Triangles', color='red')
 		self.data.close.plot()
+	
+	def trier_signal(self, series):
+		result = []
+		current_value = None
+		for value in series:
+			if value == current_value:
+				result.append(None)
+			else:
+				current_value = value
+				result.append(value)
+		result[0] = None
+		return result
