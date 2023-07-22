@@ -1,4 +1,6 @@
 import ccxt, pandas as pd, indicateur_techniques as id, numpy as np, matplotlib.pyplot as plt
+sys.path.append('Ohlcvplus/ohlcv')
+from ohlcv import OhlcvPlus
 
 class Backtest:
 	def __init__(self, capital):
@@ -18,25 +20,10 @@ class Backtest:
 		self.trade_long_v = []
 
 
-	def load_data(self, symbol='BTC/USDT', time='30m', length=500):
+	def load_data(self, symbol='BTC/USDT', time='30m', length=500, sinces='2023-01-01 00:00:00'):
 		#telecharcgement des donnée ohlcv
-		self.exchange = ccxt.binance({
-		'enableRateLimit': True,
-		})
-		try:
-			ohlcv_data = self.exchange.fetch_ohlcv(symbol, time, limit=length)
-			self.data = pd.DataFrame(ohlcv_data, columns=['timestamp', 'open', 'high', 'low', 'close', 'volume'])
-			print("data dowload")
-
-			self.data['position_long_open'] = None
-			self.data['position_long_close'] = None
-
-			self.data['position_short_open'] = None
-			self.data['position_short_close'] = None
-
-			self.data['evolution_price'] = None
-		except ccxt.NetworkError:
-			print("Problème lors du téléchargement des données")
+		ohlcvp = OhlcvPlus(ccxt.binance(), database_path='data.db')
+		self.data = ohlcvp.load(market=symbol, timeframe=time, since=sinces, limit=length, update=True, verbose=True, workers=100)
 		
 	def open_long(self, close, pos, quantite=0.1):
 		if not self.positions_long:
