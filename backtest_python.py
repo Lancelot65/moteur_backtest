@@ -1,4 +1,4 @@
-import ccxt, pandas as pd, indicateur_techniques as id, numpy as np, matplotlib.pyplot as plt
+import ccxt, pandas as pd, indicateur_techniques as id, numpy as np, matplotlib.pyplot as plt, sys
 sys.path.append('../Ohlcvplus/ohlcv')
 from ohlcv import OhlcvPlus
 
