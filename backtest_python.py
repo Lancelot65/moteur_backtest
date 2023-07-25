@@ -2,6 +2,10 @@ import ccxt, pandas as pd, numpy as np, matplotlib.pyplot as plt, sys
 sys.path.append('../Ohlcvplus/ohlcv')
 from ohlcv import OhlcvPlus
 
+class ForgotLoadData(Exception):
+    def __init__(self):
+        super().__init__("you miss load data")
+
 class Backtest:
 	def __init__(self, capital):
 		self.capital_initial = capital
