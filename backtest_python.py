@@ -24,6 +24,15 @@ class Backtest:
 		self.va_stop_loss_long = None
 		self.va_stop_loss_short = None
 
+		self.over_position = pd.DataFrame({
+			"ligne" : [],
+			"mode" : [],
+			"open" : [],
+			"close" : [],
+			"stop_loss" : [],
+			"take_profit" : []
+		})
+
 	def load_data(self, symbol='BTC/USDT', time='30m', length=500, sinces='2023-01-01 00:00:00'):
 		#telecharcgement des donnée ohlcv
 		ohlcvp = OhlcvPlus(ccxt.binance(), database_path='data.db')
@@ -33,8 +42,8 @@ class Backtest:
 		if self.positions_long is None:
 			self.positions_long = close
 			self.quantite_position_long = montant / close
+			self.pos_long = pos
 			
-			print("open_long", close, "   ", pos)
 			self.append_element_df("long_open", pos)
 
 			if take_profit is not None:
@@ -55,26 +64,49 @@ class Backtest:
 			self.trade_long_v.append((close - self.positions_long) * self.quantite_position_long)
 			self.append_element_df("long_close", position)
 
-
-			self.positions_long = None
-			self.quantite_position_long = None
-			
 			if test == 1:
-				print("close garce au take_profit", close, "   ", position)
+				add_ligne = pd.DataFrame({
+					"ligne" : [f"{int(self.pos_long)} - {int(position)}"],
+					"mode" : ["long"],
+					"open" : [self.positions_long],
+					"close" : [close],
+					"stop_loss" : ['False'],
+					"take_profit" : ['True']
+				})
+
+				self.over_position = pd.concat([self.over_position, add_ligne])
 			elif test == 2:
-				print("close grace au stop_loss", close, "   ", position)
+				add_ligne = pd.DataFrame({
+					"ligne" : [f"{int(self.pos_long)} - {int(position)}"],
+					"mode" : ["long"],
+					"open" : [self.positions_long],
+					"close" : [close],
+					"stop_loss" : ['True'],
+					"take_profit" : ['False']
+				})
+				self.over_position = pd.concat([self.over_position, add_ligne])
 			elif test == 0:
-				print("close_long")
-				print(close, "   ", position)
+				add_ligne = pd.DataFrame({
+					"ligne" : [f"{int(self.pos_long)} - {int(position)}"],
+					"mode" : ["long"],
+					"open" : [self.positions_long],
+					"close" : [close],
+					"stop_loss" : ['False'],
+					"take_profit" : ['False']
+				})
+				self.over_position = pd.concat([self.over_position, add_ligne])
 			else:
 				print("choix_incorrect", test)
 			
+			self.positions_long = None
+			self.quantite_position_long = None
+					
 	def open_short(self, close, pos, montant, take_profit=None, stop_loss=None):
 		if self.positions_short is None:
 			self.positions_short = close
 			self.quantite_position_short = montant / close
+			self.pos_short = pos
 			
-			print("open_short", close, "   ", pos)
 			self.append_element_df("short_open", pos)
 
 			if take_profit is not None:
@@ -85,32 +117,52 @@ class Backtest:
 				self.va_stop_loss_short = close * (1 + (stop_loss / 100))
 			else:
 				self.va_stop_loss_short = None
-
-
 	
 	def close_short(self, close, position, test=0):
 		if self.positions_short is not None:
-			print("***  ", ((self.positions_short / close) - 1) * 100, "  ***")
 			self.capital += (self.positions_short - close) * self.quantite_position_short # - (self.positions_short * self.quantite_position_short * 0.3)
 			self.trade_short_pc.append(((self.positions_short / close) - 1) * 100)
 			self.trade_short_v.append((self.positions_short - close) * self.quantite_position_short)
 
 			self.append_element_df("short_close", position)
 			
-
-			self.positions_short = None
-			self.quantite_position_short = None
-			
 			
 			if test == 1:
-				print("close grace au take_profit", close, "   ", position)
+				add_ligne = pd.DataFrame({
+					"ligne" : [f"{int(self.pos_short)} - {int(position)}"],
+					"mode" : ["short"],
+					"open" : [self.positions_short],
+					"close" : [close],
+					"stop_loss" : ['False'],
+					"take_profit" : ['True']
+				})
+				self.over_position = pd.concat([self.over_position, add_ligne])
 			elif test == 2:
-				print("close grace au stop_loss", close, "   ", position)
+				add_ligne = pd.DataFrame({
+					"ligne" : [f"{int(self.pos_short)} - {int(position)}"],
+					"mode" : ["short"],
+					"open" : [self.positions_short],
+					"close" : [close],
+					"stop_loss" : ['True'],
+					"take_profit" : ['False']
+				})
+				self.over_position = pd.concat([self.over_position, add_ligne])
 			elif test == 0:
-				print("close_short", close, "   ", position)
+				add_ligne = pd.DataFrame({
+					"ligne" : [f"{int(self.pos_short)} - {int(position)}"],
+					"mode" : ["short"],
+					"open" : [self.positions_short],
+					"close" : [close],
+					"stop_loss" : ['False'],
+					"take_profit" : ['False']
+				})
+				self.over_position = pd.concat([self.over_position, add_ligne])
 			else:
 				print("choix_incorrect", test)
-							
+			
+			self.positions_short = None
+			self.quantite_position_short = None
+									
 	def show_evolution_price(self):
 		self.data.evolution_price.plot()
 	
@@ -133,7 +185,6 @@ class Backtest:
 			if self.va_take_profit_short > close:
 				self.close_short(close, position, 1)
 				self.va_take_profit_short = None
-	
 
 	def stop_loss(self, close, position):		
 		if self.va_stop_loss_long is not None:
@@ -273,3 +324,7 @@ class Backtest:
 			y = self.data.close[pos]
 			plt.plot(x, y,'o', marker='^', markersize=10, label='Triangles', color='red')
 		self.data.close.plot(color='black', linewidth=1)
+
+	def df_position(self):
+		self.over_position = self.over_position.set_index("ligne")
+		print(self.over_position)
