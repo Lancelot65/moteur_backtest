@@ -19,6 +19,11 @@ class Backtest:
 		self.trade_short_v = []
 		self.trade_long_v = []
 
+		self.va_take_profit_long = None
+		self.va_take_profit_short = None
+		self.va_stop_loss_long = None
+		self.va_stop_loss_short = None
+
 	def load_data(self, symbol='BTC/USDT', time='30m', length=500, sinces='2023-01-01 00:00:00'):
 		#telecharcgement des donnée ohlcv
 		ohlcvp = OhlcvPlus(ccxt.binance(), database_path='data.db')
