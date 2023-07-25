@@ -281,9 +281,14 @@ class Backtest:
 			self.data.at[position, 'position_long_close'] = True
 		else:
 			print("Error, the style is not correct")
-	
+
 	def graphique(self, list_indicateur:list):
-		#lsit_indicateur doit contenir les df de tout les indicateur utiliser
+		#list_indicateur doit contenir les df de tout les indicateur utiliser
+		self.data.close.plot(color='black', linewidth=1)
+
+		for indicateur in list_indicateur:
+			indicateur.plot()
+			
 		try:
 			positions_so = np.where(self.data.position_short_open == True)[0]
 		except AttributeError:
@@ -303,28 +308,51 @@ class Backtest:
 			positions_lc = np.where(self.data.position_long_close == True)[0]
 		except AttributeError:
 			positions_lc = []
-
-		for indicateur in list_indicateur:
-			indicateur.plot()
 		
 		for pos in positions_so:
 			x = pos
 			y = self.data.close[pos]
-			plt.plot(x, y,'o', marker='v', markersize=10, label='Triangles', color='green')
+			plt.plot(x, y, marker='v', markersize=10, label='Triangles', color='green')
 		for pos in positions_sc:
 			x = pos
 			y = self.data.close[pos]
-			plt.plot(x, y,'o', marker='v', markersize=10, label='Triangles', color='red')
+			plt.plot(x, y, marker='v', markersize=10, label='Triangles', color='red')
 		for pos in positions_lo:
 			x = pos
 			y = self.data.close[pos]
-			plt.plot(x, y,'o', marker='^', markersize=10, label='Triangles', color='green')
+			plt.plot(x, y, marker='^', markersize=10, label='Triangles', color='green')
 		for pos in positions_lc:
 			x = pos
 			y = self.data.close[pos]
-			plt.plot(x, y,'o', marker='^', markersize=10, label='Triangles', color='red')
-		self.data.close.plot(color='black', linewidth=1)
+			plt.plot(x, y, marker='^', markersize=10, label='Triangles', color='red')
 
 	def df_position(self):
 		self.over_position = self.over_position.set_index("ligne")
 		print(self.over_position)
+
+	def backtest(self, signal_achat_long = None, signal_vente_long = None, signal_achat_short = None, signal_vente_short = None, take_profit=20, stop_loss=10, montant=10):
+		try:
+			for i in range(len(self.data.close)):
+				if signal_achat_long is not None and signal_vente_long is not None:
+					if signal_achat_long[i] == True:
+						self.open_long(self.data.close[i], i, montant, take_profit, stop_loss)
+					elif signal_vente_long[i] == True:
+						self.close_long(self.data.close[i], i)
+				
+				
+				if signal_achat_short is not None and signal_vente_short is not None:
+					if signal_achat_short[i] == True:
+						self.open_short(self.data.close[i], i, montant, take_profit, stop_loss)
+					elif signal_vente_short[i] == True:
+						self.close_short(self.data.close[i], i)
+
+				self.update(i, self.data.close[i])
+			if signal_achat_long is None or signal_vente_long is None:
+				print("no long position has been taken because one or both signals have been missed")
+			if signal_achat_short is None or signal_vente_short is None:
+				print("no short position has been taken because one or both signals have been missed")
+			self.df_position()
+
+		except AttributeError as ve:
+			raise ForgotLoadData from None
+		
