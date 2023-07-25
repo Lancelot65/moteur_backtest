@@ -1,4 +1,4 @@
-import ccxt, pandas as pd, indicateur_techniques as id, numpy as np, matplotlib.pyplot as plt, sys
+import ccxt, pandas as pd, numpy as np, matplotlib.pyplot as plt, sys
 sys.path.append('../Ohlcvplus/ohlcv')
 from ohlcv import OhlcvPlus
 
@@ -19,22 +19,36 @@ class Backtest:
 		self.trade_short_v = []
 		self.trade_long_v = []
 
+		self.va_take_profit_long = None
+		self.va_take_profit_short = None
+		self.va_stop_loss_long = None
+		self.va_stop_loss_short = None
+
 	def load_data(self, symbol='BTC/USDT', time='30m', length=500, sinces='2023-01-01 00:00:00'):
 		#telecharcgement des donnée ohlcv
 		ohlcvp = OhlcvPlus(ccxt.binance(), database_path='data.db')
 		self.data = ohlcvp.load(market=symbol, timeframe=time, since=sinces, limit=length, update=True, verbose=True, workers=100)
 		
-	def open_long(self, close, pos, montant):
+	def open_long(self, close, pos, montant, take_profit=None, stop_loss=None):
 		if self.positions_long is None:
 			self.positions_long = close
 			self.quantite_position_long = montant / close
 			
 			print("open_long", close, "   ", pos)
 			self.append_element_df("long_open", pos)
+
+			if take_profit is not None:
+				self.va_take_profit_long = close * (1 + (take_profit / 100))
+			else:
+				self.va_take_profit_long = None
+				
+			if stop_loss is not None:
+				self.va_stop_loss_long = close * (1 - (stop_loss / 100))
+			else:
+				self.va_stop_loss_long = None
 	
 	def close_long(self, close, position, test=0):
 		if self.positions_long is not None:
-			print("___  ", ((close / self.positions_long) - 1) * 100, "  ___")
 			self.capital += (close - self.positions_long) * self.quantite_position_long # - (self.positions_long * self.quantite_position_long * 0.3
 			
 			self.trade_long_pc.append(((close / self.positions_long) - 1) * 100)
@@ -55,13 +69,24 @@ class Backtest:
 			else:
 				print("choix_incorrect", test)
 			
-	def open_short(self, close, pos, montant):
+	def open_short(self, close, pos, montant, take_profit=None, stop_loss=None):
 		if self.positions_short is None:
 			self.positions_short = close
 			self.quantite_position_short = montant / close
 			
 			print("open_short", close, "   ", pos)
 			self.append_element_df("short_open", pos)
+
+			if take_profit is not None:
+				self.va_take_profit_short = close * (1 - (take_profit / 100))
+			else:
+				self.va_take_profit_short = None
+			if stop_loss is not None:
+				self.va_stop_loss_short = close * (1 + (stop_loss / 100))
+			else:
+				self.va_stop_loss_short = None
+
+
 	
 	def close_short(self, close, position, test=0):
 		if self.positions_short is not None:
@@ -95,35 +120,31 @@ class Backtest:
 		"""
 		self.take_profit(close, pos)
 		self.stop_loss(close, pos)
-		self.data.at[pos, 'evolution_price'] = self.capital
 		
 	def take_profit(self, close, position):
-		if self.positions_long is not None:
+		if self.va_take_profit_long is not None:
 			
-			if ((close / self.positions_long) - 1) * 100 > 100:
-				print("take_profit_long")
-				print(((close / self.positions_long) - 1) * 100)
+			if self.va_take_profit_long < close:
 				self.close_long(close, position, 1)
+				self.va_take_profit_long = None
 				
 	
-		if self.positions_short is not None:
-			if ((close / self.positions_short) - 1) * 100 < -100:
-				print("take_profit_short")
-				print(((close / self.positions_short) - 1) * 100)
+		if self.va_take_profit_short is not None:
+			if self.va_take_profit_short > close:
 				self.close_short(close, position, 1)
+				self.va_take_profit_short = None
 	
-	def stop_loss(self, close, position):		
-		if self.positions_long is not None:
-			if ((close / self.positions_long) - 1) * 100 < -1:
-				print("stop_loss_long")
-				print(((close / self.positions_long) - 1) * 100)
-				self.close_long(close, position, 2)
 
-		if self.positions_short is not None:
-			if ((close / self.positions_short) - 1) * 100 > 1:
-				print("stop_loss_short")
-				print(((close / self.positions_short) - 1) * 100)
+	def stop_loss(self, close, position):		
+		if self.va_stop_loss_long is not None:
+			if self.va_stop_loss_long > close:
+				self.close_long(close, position, 2)
+				self.va_stop_loss_long = None
+
+		if self.va_stop_loss_short is not None:
+			if self.va_stop_loss_short < close:
 				self.close_short(close, position, 2)
+				self.va_stop_loss_short = None
 	
 	def trier_signal(self, series):
 		result = []
@@ -156,9 +177,9 @@ class Backtest:
 
 		a, b = 0, 0
 		for element in self.trade_short_v:
-			if element > 0:
+			if element < 0:
 				a +=1
-			elif element < 0:
+			elif element > 0:
 				b += 1
 		print(f"trade_short_win : {a}")
 		print(f"trade_short_lose : {b}")
