@@ -86,9 +86,7 @@ def OBV(close, volume):
             obv.append(obv[i-1] - volume[i])
         else:
             obv.append(obv[i-1])
-
     return obv
-
 
 def nuage_ichimoku(close, plot_nuage=False):
     tenkan_sen = (close.rolling(9).max() + close.rolling(9).min()) / 2
