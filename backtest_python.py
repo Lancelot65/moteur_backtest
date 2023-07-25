@@ -41,6 +41,7 @@ class Backtest:
 				self.va_take_profit_long = close * (1 + (take_profit / 100))
 			else:
 				self.va_take_profit_long = None
+				
 			if stop_loss is not None:
 				self.va_stop_loss_long = close * (1 - (stop_loss / 100))
 			else:
@@ -48,7 +49,6 @@ class Backtest:
 	
 	def close_long(self, close, position, test=0):
 		if self.positions_long is not None:
-			print("___  ", ((close / self.positions_long) - 1) * 100, "  ___")
 			self.capital += (close - self.positions_long) * self.quantite_position_long # - (self.positions_long * self.quantite_position_long * 0.3
 			
 			self.trade_long_pc.append(((close / self.positions_long) - 1) * 100)
@@ -120,22 +120,17 @@ class Backtest:
 		"""
 		self.take_profit(close, pos)
 		self.stop_loss(close, pos)
-		self.data.at[pos, 'evolution_price'] = self.capital
 		
 	def take_profit(self, close, position):
 		if self.va_take_profit_long is not None:
 			
 			if self.va_take_profit_long < close:
-				print("take_profit_long")
-				print(self.va_take_profit_long)
 				self.close_long(close, position, 1)
 				self.va_take_profit_long = None
 				
 	
 		if self.va_take_profit_short is not None:
 			if self.va_take_profit_short > close:
-				print("take_profit_short")
-				print(self.va_take_profit_short)
 				self.close_short(close, position, 1)
 				self.va_take_profit_short = None
 	
@@ -143,15 +138,11 @@ class Backtest:
 	def stop_loss(self, close, position):		
 		if self.va_stop_loss_long is not None:
 			if self.va_stop_loss_long > close:
-				print("stop_loss_long")
-				print(self.va_stop_loss_long)
 				self.close_long(close, position, 2)
 				self.va_stop_loss_long = None
 
 		if self.va_stop_loss_short is not None:
 			if self.va_stop_loss_short < close:
-				print("stop_loss_short")
-				print(self.va_stop_loss_short)
 				self.close_short(close, position, 2)
 				self.va_stop_loss_short = None
 	
@@ -186,9 +177,9 @@ class Backtest:
 
 		a, b = 0, 0
 		for element in self.trade_short_v:
-			if element > 0:
+			if element < 0:
 				a +=1
-			elif element < 0:
+			elif element > 0:
 				b += 1
 		print(f"trade_short_win : {a}")
 		print(f"trade_short_lose : {b}")
