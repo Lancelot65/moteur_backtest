@@ -333,6 +333,14 @@ class Backtest:
 	def df_position(self):
 		self.over_position = self.over_position.set_index("ligne")
 		print(self.over_position)
+		self.over_position = pd.DataFrame({
+			"ligne" : [],
+			"mode" : [],
+			"open" : [],
+			"close" : [],
+			"stop_loss" : [],
+			"take_profit" : []
+		})
 
 	def backtest(self, signal_achat_long = None, signal_vente_long = None, signal_achat_short = None, signal_vente_short = None, take_profit=20, stop_loss=10, montant=10):
 		self.data.position_short_open = None
