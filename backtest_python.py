@@ -1,5 +1,5 @@
 import ccxt, pandas as pd, numpy as np, matplotlib.pyplot as plt, sys
-sys.path.append('../Ohlcvplus/ohlcv')
+sys.path.append('../Ohlcvplus')
 from ohlcv import OhlcvPlus
 
 class ForgotLoadData(Exception):
