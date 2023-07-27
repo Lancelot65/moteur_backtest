@@ -335,6 +335,10 @@ class Backtest:
 		print(self.over_position)
 
 	def backtest(self, signal_achat_long = None, signal_vente_long = None, signal_achat_short = None, signal_vente_short = None, take_profit=20, stop_loss=10, montant=10):
+		self.data.position_short_open = None
+		self.data.position_short_close = None
+		self.data.position_long_open = None
+		self.data.position_long_close = None
 		try:
 			for i in range(len(self.data.close)):
 				if signal_achat_long is not None and signal_vente_long is not None:
