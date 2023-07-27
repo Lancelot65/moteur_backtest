@@ -1,4 +1,5 @@
 import ccxt, pandas as pd, numpy as np, matplotlib.pyplot as plt, sys
+sys.path.append('../Ohlcvplus/ohlcv')
 sys.path.append('../Ohlcvplus')
 from ohlcv import OhlcvPlus
 
@@ -333,20 +334,8 @@ class Backtest:
 	def df_position(self):
 		self.over_position = self.over_position.set_index("ligne")
 		print(self.over_position)
-		self.over_position = pd.DataFrame({
-			"ligne" : [],
-			"mode" : [],
-			"open" : [],
-			"close" : [],
-			"stop_loss" : [],
-			"take_profit" : []
-		})
 
 	def backtest(self, signal_achat_long = None, signal_vente_long = None, signal_achat_short = None, signal_vente_short = None, take_profit=20, stop_loss=10, montant=10):
-		self.data.position_short_open = None
-		self.data.position_short_close = None
-		self.data.position_long_open = None
-		self.data.position_long_close = None
 		try:
 			for i in range(len(self.data.close)):
 				if signal_achat_long is not None and signal_vente_long is not None:
@@ -371,4 +360,4 @@ class Backtest:
 
 		except AttributeError as ve:
 			raise ForgotLoadData from None
-		
+	
