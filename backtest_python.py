@@ -1,5 +1,4 @@
-import ccxt, pandas as pd, numpy as np, matplotlib.pyplot as plt, sys
-sys.path.append('../Ohlcvplus/ohlcv')
+import ccxt, pandas as pd, numpy as np, matplotlib.pyplot as plt, sys, mplfinance as mpf
 sys.path.append('../Ohlcvplus')
 from ohlcv import OhlcvPlus
 
@@ -267,6 +266,10 @@ class Backtest:
 		except (ZeroDivisionError, ValueError):
 			print("bad short_trade : 0$ / 0%")
 
+		self.capital = self.capital_initial
+		self.trade_long_v, self.trade_short_v, self.trade_long_pc, self.trade_short_pc = [], [], [], []
+
+
 	def append_element_df(self, style:str, position):
 		"""
 		style doit être égale a :
@@ -334,6 +337,14 @@ class Backtest:
 	def df_position(self):
 		self.over_position = self.over_position.set_index("ligne")
 		print(self.over_position)
+		self.over_position = pd.DataFrame({
+			"ligne" : [],
+			"mode" : [],
+			"open" : [],
+			"close" : [],
+			"stop_loss" : [],
+			"take_profit" : []
+		})
 
 	def backtest(self, signal_achat_long = None, signal_vente_long = None, signal_achat_short = None, signal_vente_short = None, take_profit=20, stop_loss=10, montant=10):
 		try:
@@ -352,6 +363,12 @@ class Backtest:
 						self.close_short(self.data.close[i], i)
 
 				self.update(i, self.data.close[i])
+				
+			if self.positions_long is not None:
+				self.close_long(self.data.close[len(self.data.close) - 1], len(self.data.close ) - 1)
+			if self.positions_short is not None:
+				self.close_short(self.data.close[len(self.data.close) - 1], len(self.data.close) - 1)
+
 			if signal_achat_long is None or signal_vente_long is None:
 				print("no long position has been taken because one or both signals have been missed")
 			if signal_achat_short is None or signal_vente_short is None:
@@ -360,4 +377,3 @@ class Backtest:
 
 		except AttributeError as ve:
 			raise ForgotLoadData from None
-	
